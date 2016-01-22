@@ -3,8 +3,23 @@ package followers
 class UserController {
     User currentUser
     User searchedUser
+    static int signUpFailed = 0
+    static int logInFailed = 0
+    static int searchedFailed = 0
+    static int registered = 0
 
-    def index() { }
+    def index() {
+        logInFailed = 0
+        registered = 0
+        signUpFailed = 0
+        redirect(uri: "/")
+    }
+
+    def signUpView() {
+        logInFailed = 0
+        registered = 0
+        redirect(uri: "/signup")
+    }
 
     def signUp() {
 
@@ -14,22 +29,30 @@ class UserController {
 
             if (params.password == params.repeatPassword) {
 
-                def newUser = new User(username: params.username, password: params.password, followers: 0, following: 0)
+                def newUser = new User(username: params.username, date: new Date(), password:
+                        params.password, followers: 0, following: 0)
                 newUser.save()
 
                 if (newUser.save()) {
-                    render "New user saved"
+                    signUpFailed = 0
+                    registered = 1
+                    render(view: "/logIn", model: [user: newUser])
+                    println "New user saved"
 
                 } else {
-                    render "failed"
+                    render "There has been an error while registering you, please try again later."
                 }
 
             } else {
-                render "Password fields do not match"
+                signUpFailed = 1
+                render(view: "/signUp", model: [username: params.username])
+                println "Password fields do not match"
             }
 
         } else {
-            render "Username already taken"
+            signUpFailed = 2
+            render(view: "/signUp")
+            println "Username already taken."
         }
     }
 
@@ -39,12 +62,16 @@ class UserController {
 
         if (u) {
             println "Log In succes"
+            logInFailed = 0
+            registered = 0
             session.user = u
             currentUser = u
             redirect(action: "home")
 
         } else {
-            render "Log In failed"
+            logInFailed = 1
+            render(view: "/logIn", model: [username: params.username])
+            println "Log In failed"
         }
     }
 
@@ -54,6 +81,7 @@ class UserController {
             session.invalidate()
             redirect(uri: "/")
             currentUser = null
+            searchedFailed = 0
         }
     }
 
@@ -76,12 +104,21 @@ class UserController {
 
             def u = User.findByUsername(params.searchUser)
 
-            if (u) {
-                searchedUser = u
-                render(view: "/userProfile", model: [user: u])
+            if (!u) {
+                searchedFailed = 2
+                redirect(action: "home")
+                println "User not found."
 
-            } else {
-                render "User not found"
+            } else if(u && u.username == currentUser.username) {
+                searchedFailed = 1
+                redirect(action: "home")
+                println "You have searched yourself."
+
+            } else if (u) {
+                searchedFailed = 0
+                searchedUser = u
+                def following = Following.findByFollowerAndFollowed(currentUser, u)
+                render(view: "/userProfile", model: [user: u, following: following])
             }
 
         } else {
@@ -109,5 +146,22 @@ class UserController {
         } else {
             println "Error while following user"
         }
+    }
+    
+    def unfollowUser() {
+
+        def u = User.find(currentUser)
+        def searchedUser = User.find(searchedUser)
+        def following = Following.findByFollowerAndFollowed(u, searchedUser)
+        following.delete()
+
+        u.following -= 1
+        searchedUser.followers -=1
+        u.save(flush: true)
+        searchedUser.save(flush: true)
+
+        currentUser = u
+        redirect(action: "home")
+        println "You have unfollowed @${searchedUser.username}"
     }
 }

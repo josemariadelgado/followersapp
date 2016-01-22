@@ -22,9 +22,17 @@
     <h2>@${user.username}</h2>
     <h4>Is being followed by ${user.followers} users</h4>
     <h4>Is following ${user.following} users</h4><br>
-    <g:form controller="User" action="followUser">
-        <button type="submit" class="btn btn-primary">Follow</button>
+    <g:if test="${following}">
+    <g:form controller="User" action="unfollowUser">
+        <button type="submit" class="btn btn-danger">Unfollow</button>
     </g:form>
+    </g:if>
+    <g:else>
+        <g:form controller="User" action="followUser">
+            <button type="submit" class="btn btn-primary">Follow</button>
+        </g:form>
+    </g:else><br>
+    <a href="/followers/User/home">My profile</a>
 </div>
 </body>
 </html>

@@ -30,24 +30,45 @@
         width: 100%;
     }
 
+    .signup-failed-label {
+        color: red;
+    }
+
     </style>
 </head>
 
 <body>
 <g:form controller="User" action="signUp" class="container logIn-form" role="form">
+    <g:if test="${followers.UserController.signUpFailed != 1}">
     <div class="form-group">
-        <input  type="email" name="username" class="form-control inputs" placeholder="Username">
+        <input  type="text" name="username" pattern=".{3,20}" class="form-control inputs" placeholder="Username (3 - 20 characters)" required>
+    </div>
+    </g:if>
+    <g:elseif test="${followers.UserController.signUpFailed == 1}">
+        <div class="form-group">
+            <input  type="text" name="username" pattern=".{3,20}" value="${username}" class="form-control inputs" placeholder="Username (3 - 20 characters)" required>
+        </div>
+    </g:elseif>
+    <div class="form-group">
+        <input type="password" name="password" pattern=".{6,20}" class="form-control inputs" placeholder="Password (6 - 20 characters)" required>
     </div>
     <div class="form-group">
-        <input type="password" name="password" class="form-control inputs" placeholder="Password">
-    </div>
-    <div class="form-group">
-        <input type="password" name="repeatPassword" class="form-control inputs" placeholder="Repeat your password">
+        <input type="password" name="repeatPassword" pattern=".{6,20}"  class="form-control inputs" placeholder="Repeat your password" required>
     </div>
     <button type="submit" class="btn btn-primary">Create my account</button>
     <div class="checkbox">
-        <a href="/followers/login">Log in</a>
+        <g:link controller="User" action="index">Log in</g:link>
     </div>
+    <g:if test="${followers.UserController.signUpFailed == 1}">
+        <div>
+            <p class="signup-failed-label">Password fields don't match</p>
+        </div>
+    </g:if>
+    <g:elseif test="${followers.UserController.signUpFailed == 2}">
+    <div>
+        <p class="signup-failed-label">That username is not available :(</p>
+    </div>
+</g:elseif>
 </g:form>
 </body>
 </html>
